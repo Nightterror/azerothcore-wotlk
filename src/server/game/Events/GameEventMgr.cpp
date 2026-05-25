@@ -1882,15 +1882,31 @@ public:
     void Visit(std::unordered_map<ObjectGuid, Creature*>& creatureMap)
     {
         for (auto const& p : creatureMap)
-            if (p.second->IsInWorld() && !p.second->IsDuringRemoveFromWorld() && p.second->FindMap() && p.second->IsAIEnabled && p.second->AI())
-                p.second->AI()->sOnGameEvent(_activate, _eventId);
+        {
+            Creature* creature = p.second;
+            if (!creature || creature->GetGUID() != p.first || creature->IsDuringRemoveFromWorld())
+                continue;
+
+            if (!creature->IsInWorld() || !creature->FindMap() || !creature->IsAIEnabled || !creature->AI())
+                continue;
+
+            creature->AI()->sOnGameEvent(_activate, _eventId);
+        }
     }
 
     void Visit(std::unordered_map<ObjectGuid, GameObject*>& gameObjectMap)
     {
         for (auto const& p : gameObjectMap)
-            if (p.second->IsInWorld() && p.second->FindMap() && p.second->AI())
-                p.second->AI()->OnGameEvent(_activate, _eventId);
+        {
+            GameObject* go = p.second;
+            if (!go || go->GetGUID() != p.first)
+                continue;
+
+            if (!go->IsInWorld() || !go->FindMap() || !go->AI())
+                continue;
+
+            go->AI()->OnGameEvent(_activate, _eventId);
+        }
     }
 
     template<class T>
@@ -1907,6 +1923,10 @@ void GameEventMgr::RunSmartAIScripts(uint16 eventId, bool activate)
     //! Not entirely sure how this will affect units in non-loaded grids.
     sMapMgr->DoForAllMaps([eventId, activate](Map* map)
     {
+        // GameEventUnspawn queues deletions via AddObjectToRemoveList during the same
+        // event tick; flush them before iterating the object store for SAI hooks.
+        map->RemoveAllObjectsInRemoveList();
+
         GameEventAIHookWorker worker(eventId, activate);
         TypeContainerVisitor<GameEventAIHookWorker, MapStoredObjectTypesContainer> visitor(worker);
         visitor.Visit(map->GetObjectsStore());
