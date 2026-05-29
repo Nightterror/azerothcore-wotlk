@@ -1508,6 +1508,8 @@ enum AcoreStrings
     LANG_RESPAWN_ENTRY_GAMEOBJECT_QUEUED     = 35452,
 
     // List respawns console support
-    LANG_LIST_RESPAWNS_NO_MAP           = 35447
+    LANG_LIST_RESPAWNS_NO_MAP           = 35447,
+
+    LANG_COMMAND_HONOR_ADD_KILLS        = 35453
 };
 #endif

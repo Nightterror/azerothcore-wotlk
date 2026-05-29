@@ -15,9 +15,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AchievementMgr.h"
 #include "Chat.h"
 #include "CommandScript.h"
 #include "Language.h"
+#include "ObjectDefines.h"
 #include "Player.h"
 #include "RBAC.h"
 #include "WorldSession.h"
@@ -33,8 +35,9 @@ public:
     {
         static ChatCommandTable honorAddCommandTable =
         {
-            { "kill", HandleHonorAddKillCommand, rbac::RBAC_PERM_COMMAND_HONOR_ADD_KILL, Console::No },
-            { "",     HandleHonorAddCommand,     rbac::RBAC_PERM_COMMAND_HONOR_ADD,      Console::No }
+            { "kills", HandleHonorAddKillsCommand, rbac::RBAC_PERM_COMMAND_HONOR_ADD_KILL, Console::No },
+            { "kill",  HandleHonorAddKillCommand,  rbac::RBAC_PERM_COMMAND_HONOR_ADD_KILL, Console::No },
+            { "",      HandleHonorAddCommand,      rbac::RBAC_PERM_COMMAND_HONOR_ADD,      Console::No }
         };
 
         static ChatCommandTable honorCommandTable =
@@ -82,6 +85,49 @@ public:
                 return false;
 
         handler->GetSession()->GetPlayer()->RewardHonor(target, 1);
+        return true;
+    }
+
+    static bool HandleHonorAddKillsCommand(ChatHandler* handler, uint32 amount)
+    {
+        if (!amount)
+        {
+            handler->SendErrorMessage(LANG_BAD_VALUE);
+            return false;
+        }
+
+        Player* target = handler->getSelectedPlayer();
+        if (!target)
+        {
+            handler->SendErrorMessage(LANG_PLAYER_NOT_FOUND);
+            return false;
+        }
+
+        // check online security
+        if (handler->HasLowerSecurity(target, ObjectGuid::Empty))
+            return false;
+
+        target->UpdateHonorFields();
+
+        uint32 kills = target->GetUInt32Value(PLAYER_FIELD_KILLS);
+        uint16 killsToday = PAIR32_LOPART(kills);
+        uint16 killsYesterday = PAIR32_HIPART(kills);
+
+        uint32 newKillsToday = killsToday + amount;
+        if (newKillsToday > 0xFFFF)
+            newKillsToday = 0xFFFF;
+
+        target->SetUInt32Value(PLAYER_FIELD_KILLS,
+            MAKE_PAIR32(uint16(newKillsToday), killsYesterday));
+        target->ApplyModUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS,
+            amount, true);
+        target->UpdateAchievementCriteria(
+            ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL);
+
+        handler->PSendSysMessage(LANG_COMMAND_HONOR_ADD_KILLS,
+            amount, handler->GetNameLink(target),
+            target->GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS));
+
         return true;
     }
 
