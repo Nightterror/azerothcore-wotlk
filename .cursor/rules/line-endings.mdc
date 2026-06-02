@@ -1,0 +1,14 @@
+---
+description: Use LF (UNIX) line endings for all text files in this repo
+alwaysApply: true
+---
+
+# Line endings
+
+AzerothCore uses **UTF-8 with LF (`\n`) line endings** — not CRLF (Windows) or CR-only (classic Mac).
+
+- Match `.editorconfig` (`end_of_line = lf`) and `.gitattributes` (`* text eol=lf`).
+- When creating or editing files, preserve LF. Do not introduce `\r\n` or `\r`-only newlines.
+- MSVC warns with **C4335** on Mac/CR-only sources; it does not break the build but should be avoided.
+
+If a file has wrong endings, normalize to LF before committing (EditorConfig-aware editors do this on save).
