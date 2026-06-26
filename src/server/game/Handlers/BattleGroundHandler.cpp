@@ -734,6 +734,14 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     if (!bracketEntry)
         return;
 
+    if (!sWorld->IsArenaTeamAllowedLevel(_player->GetLevel()))
+    {
+        WorldPacket data;
+        sBattlegroundMgr->BuildGroupJoinedBattlegroundPacket(&data, ERR_BATTLEGROUND_JOIN_FAILED);
+        SendPacket(&data);
+        return;
+    }
+
     // must have free queue slot
     // pussywizard: allow being queued only in one arena queue, and it even cannot be together with bg queues
     if (_player->InBattlegroundQueue())

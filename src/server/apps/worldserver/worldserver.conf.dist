@@ -3953,6 +3953,16 @@ Battleground.EyeOfTheStorm.CapturePoints = 1600
 Arena.PrepTime = 60
 
 #
+#    ArenaTeam.AllowedLevels
+#        Description: Comma-separated character levels allowed to create or join arena
+#                     teams and queue for rated/skirmish arena. When empty, only
+#                     MaxPlayerLevel is allowed (default retail behaviour).
+#        Example:     70,80 - TBC-cap and WotLK-cap brackets only; 71-79 invalid
+#        Default:     (empty)
+
+ArenaTeam.AllowedLevels =
+
+#
 #    Arena.MaxRatingDifference
 #        Description: Maximum rating difference between two teams in rated matches.
 #        Default:     150 - (Enabled)

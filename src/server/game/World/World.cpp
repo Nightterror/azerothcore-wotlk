@@ -98,6 +98,7 @@
 #include "WorldSessionMgr.h"
 #include "WorldState.h"
 #include "WorldStateDefines.h"
+#include "Tokenize.h"
 #include <boost/asio/ip/address.hpp>
 #include <cmath>
 
@@ -292,6 +293,8 @@ void World::LoadConfigSettings(bool reload)
     VMAP::VMapFactory::createOrGetVMapMgr()->setEnableLineOfSightCalc(enableLOS);
     VMAP::VMapFactory::createOrGetVMapMgr()->setEnableHeightCalc(enableHeight);
     LOG_INFO("server.loading", "WORLD: VMap support included. LineOfSight:{}, getHeight:{}, indoorCheck:{} PetLOS:{}", enableLOS, enableHeight, enableIndoor, enablePetLOS);
+
+    LoadArenaTeamAllowedLevels();
 
     // call ScriptMgr if we're reloading the configuration
     sScriptMgr->OnAfterConfigLoad(reload);
@@ -1378,6 +1381,55 @@ void World::setStringConfig(ServerConfigs index, std::string const& value)
 std::string_view World::getStringConfig(ServerConfigs index) const
 {
     return _worldConfig.GetConfigValue(index);
+}
+
+void World::LoadArenaTeamAllowedLevels()
+{
+    _arenaTeamAllowedLevels.clear();
+
+    std::string allowedLevels = sConfigMgr->GetOption<std::string>("ArenaTeam.AllowedLevels", "");
+
+    for (std::string_view token : Acore::Tokenize(allowedLevels, ',', false))
+    {
+        if (token.empty())
+            continue;
+
+        Optional<uint32> level = Acore::StringTo<uint32>(token);
+        if (!level || !*level || *level > DEFAULT_MAX_LEVEL)
+            continue;
+
+        _arenaTeamAllowedLevels.insert(static_cast<uint8>(*level));
+    }
+
+    if (!_arenaTeamAllowedLevels.empty())
+    {
+        std::string levels;
+        for (uint8 level : GetArenaTeamAllowedLevels())
+        {
+            if (!levels.empty())
+                levels += ',';
+
+            levels += std::to_string(level);
+        }
+
+        LOG_INFO("server.loading", "Arena team allowed levels: {}", levels);
+    }
+}
+
+bool World::IsArenaTeamAllowedLevel(uint8 level) const
+{
+    if (!_arenaTeamAllowedLevels.empty())
+        return _arenaTeamAllowedLevels.contains(level);
+
+    return level >= getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+}
+
+std::vector<uint8> World::GetArenaTeamAllowedLevels() const
+{
+    if (!_arenaTeamAllowedLevels.empty())
+        return std::vector<uint8>(_arenaTeamAllowedLevels.begin(), _arenaTeamAllowedLevels.end());
+
+    return { static_cast<uint8>(getIntConfig(CONFIG_MAX_PLAYER_LEVEL)) };
 }
 
 void World::ForceGameEventUpdate()

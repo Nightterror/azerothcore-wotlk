@@ -78,6 +78,15 @@ public:
         if (!captain)
             return false;
 
+        if (Player* captainPlayer = captain->GetConnectedPlayer())
+        {
+            if (!sWorld->IsArenaTeamAllowedLevel(captainPlayer->GetLevel()))
+            {
+                handler->SendErrorMessage(LANG_ARENA_ERROR_SIZE, captain->GetName());
+                return false;
+            }
+        }
+
         if (Player::GetArenaTeamIdFromDB(captain->GetGUID(), type) != 0)
         {
             handler->SendErrorMessage(LANG_ARENA_ERROR_SIZE, captain->GetName());

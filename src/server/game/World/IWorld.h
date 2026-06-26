@@ -26,6 +26,7 @@
 #include "SharedDefines.h"
 #include "WorldConfig.h"
 #include <unordered_map>
+#include <vector>
 
 class WorldPacket;
 class WorldSession;
@@ -116,6 +117,8 @@ public:
     virtual void SetRealmName(std::string name) = 0;
     virtual SQLQueryHolderCallback& AddQueryHolderCallback(SQLQueryHolderCallback&& callback) = 0;
     virtual void ReloadRBAC() = 0;
+    [[nodiscard]] virtual bool IsArenaTeamAllowedLevel(uint8 level) const = 0;
+    [[nodiscard]] virtual std::vector<uint8> GetArenaTeamAllowedLevels() const = 0;
 };
 
 #endif //AZEROTHCORE_IWORLD_H

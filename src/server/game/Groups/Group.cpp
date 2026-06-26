@@ -1975,6 +1975,9 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const* 
         if (!member)
             return ERR_BATTLEGROUND_JOIN_FAILED;
 
+        if (bgTemplate->isArena() && !sWorld->IsArenaTeamAllowedLevel(member->GetLevel()))
+            return ERR_BATTLEGROUND_JOIN_FAILED;
+
         if (!sScriptMgr->CanGroupJoinBattlegroundQueue(this, member, bgTemplate, MinPlayerCount, isRated, arenaSlot))
             return ERR_BATTLEGROUND_JOIN_FAILED;
 

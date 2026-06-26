@@ -32,6 +32,8 @@
 #include <list>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 class Object;
 class WorldPacket;
@@ -175,6 +177,9 @@ public:
         return lvl > 60 ? 300 + ((lvl - 60) * 75) / 10 : lvl * 5;
     }
 
+    [[nodiscard]] bool IsArenaTeamAllowedLevel(uint8 level) const override;
+    [[nodiscard]] std::vector<uint8> GetArenaTeamAllowedLevels() const override;
+
     void SetInitialWorldSettings() override;
     void LoadConfigSettings(bool reload = false) override;
 
@@ -311,9 +316,11 @@ private:
     std::string m_PlayerbotsDBRevision;
 #endif
 
+    void LoadArenaTeamAllowedLevels();
     void ProcessQueryCallbacks();
     QueryCallbackProcessor _queryProcessor;
     AsyncCallbackProcessor<SQLQueryHolderCallback> _queryHolderProcessor;
+    std::unordered_set<uint8> _arenaTeamAllowedLevels;
 
     /**
      * @brief Executed when a World Session is being finalized. Be it from a normal login or via queue popping.

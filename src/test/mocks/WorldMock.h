@@ -86,6 +86,8 @@ public:
     MOCK_METHOD(void, SetRealmName, (std::string name), ());
     MOCK_METHOD(void, RemoveOldCorpses, ());
     MOCK_METHOD(void, ReloadRBAC, ());
+    MOCK_METHOD(bool, IsArenaTeamAllowedLevel, (uint8 level), (const));
+    MOCK_METHOD(std::vector<uint8>, GetArenaTeamAllowedLevels, (), (const));
 };
 #pragma GCC diagnostic pop
 
