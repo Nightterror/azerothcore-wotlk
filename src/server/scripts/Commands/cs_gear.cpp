@@ -17,6 +17,7 @@
 
 #include "Chat.h"
 #include "CommandScript.h"
+#include "Item.h"
 #include "Language.h"
 #include "Player.h"
 #include "RBAC.h"
@@ -34,7 +35,8 @@ public:
         static ChatCommandTable gearCommandTable =
         {
             { "repair",  HandleGearRepairCommand, rbac::RBAC_PERM_COMMAND_GEAR_REPAIR, Console::No },
-            { "stats",   HandleGearStatsCommand,  rbac::RBAC_PERM_COMMAND_GEAR_STATS,  Console::No }
+            { "stats",   HandleGearStatsCommand,  rbac::RBAC_PERM_COMMAND_GEAR_STATS,  Console::No },
+            { "copy",    HandleGearCopyCommand,   rbac::RBAC_PERM_COMMAND_ADDITEM,     Console::No }
         };
 
         static ChatCommandTable commandTable =
@@ -119,6 +121,84 @@ public:
         }
 
         return true;
+    }
+
+    static void CopyItemProperties(Item const* source, Item* dest)
+    {
+        for (uint8 i = 0; i < MAX_ENCHANTMENT_SLOT; ++i)
+        {
+            EnchantmentSlot slot = EnchantmentSlot(i);
+            dest->SetEnchantment(slot, source->GetEnchantmentId(slot),
+                source->GetEnchantmentDuration(slot), source->GetEnchantmentCharges(slot));
+        }
+    }
+
+    static bool HandleGearCopyCommand(ChatHandler* handler)
+    {
+        Player* receiver = handler->GetPlayer();
+        if (!receiver)
+            return false;
+
+        Player* source = handler->getSelectedPlayer();
+        if (!source)
+        {
+            handler->SendSysMessage("Select a player to copy equipped items from.");
+            return false;
+        }
+
+        if (source == receiver)
+        {
+            handler->SendSysMessage("Select another player; cannot copy from yourself.");
+            return false;
+        }
+
+        if (handler->HasLowerSecurity(source))
+            return false;
+
+        uint32 copied = 0;
+        uint32 skipped = 0;
+
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+        {
+            Item* sourceItem = source->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+            if (!sourceItem)
+                continue;
+
+            Item* copy = sourceItem->CloneItem(sourceItem->GetCount(), receiver);
+            if (!copy)
+            {
+                ++skipped;
+                continue;
+            }
+
+            CopyItemProperties(sourceItem, copy);
+
+            ItemPosCountVec dest;
+            InventoryResult msg = receiver->CanStoreItem(NULL_BAG, NULL_SLOT, dest, copy, false);
+            if (msg != EQUIP_ERR_OK)
+            {
+                delete copy;
+                handler->PSendSysMessage(LANG_ITEM_CANNOT_CREATE, sourceItem->GetEntry(), 1);
+                ++skipped;
+                continue;
+            }
+
+            copy = receiver->StoreItem(dest, copy, true);
+            if (!copy)
+            {
+                ++skipped;
+                continue;
+            }
+
+            copy->SetBinding(false);
+            receiver->SendNewItem(copy, copy->GetCount(), false, true);
+            ++copied;
+        }
+
+        handler->PSendSysMessage("Copied {} equipped item(s) from {} to your bags ({} skipped).",
+            copied, handler->GetNameLink(source), skipped);
+
+        return copied > 0 || skipped == 0;
     }
 };
 
