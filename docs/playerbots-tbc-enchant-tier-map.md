@@ -4,97 +4,73 @@ Implemented in `IsEnchantSpellAllowedForProgression()` (`ProgressionGearLimits.c
 
 See also: [playerbots-tbc-gems-by-ilvl.md](playerbots-tbc-gems-by-ilvl.md).
 
-## How maintenance picks enchants today
+## How maintenance picks enchants
 
 1. Startup builds `enchantSpellIdCache` from **every** spell with `SPELL_EFFECT_ENCHANT_ITEM`.
 2. Maintenance loops each equipped item, filters spells, picks **highest stat score**.
-3. Gating today is **expansion-only**: block spell ≥ 27899 in classic, spell ≥ 44483 in TBC.
+3. Expansion floors: block spell ≥ 27899 in classic phase; block spell ≥ 44483 in TBC phase.
 4. Bots do not use scrolls/formulas — they apply the enchant spell directly.
 
-Within TBC phase, **all ~16k+ cached enchant spells compete**. Only a **small subset** have raid-only formulas and high enough stats to “win” early.
+Within the TBC band, **all cached enchant spells compete** on stat score. Only **six** spell IDs have explicit IP tier overrides.
 
-## Proposed model (same idea as gems)
+## Model
 
 ```text
-Default: TBC enchant spell allowed at IP tier >= 9
-Override table: spell ID -> minimum IP tier (only where source is later than Kara)
+Default: TBC enchant spell (27899–44482) allowed at IP tier >= 8
+Override table: six spell IDs with higher minimum tiers
 ```
 
-No change to classic (< 27899) or WotLK (≥ 44483) expansion floors.
+Classic enchants (< 27899) are never tier-gated. WotLK enchants (≥ 44483) stay blocked until WotLK content phase.
 
-## IP tiers (match gem gating)
+## IP tiers
 
-| IP tier | Milestone | Enchant content |
-|--------:|-----------|-----------------|
-| 9 | Kara / early TBC | Trainer, vendor, heroic, Kara drops (Major Striking, Mongoose, Cat’s Swiftness, etc.) |
-| 10 | Hyjal / TK | Sunfire, Soulfrost, Potency, Major Spellpower (weapon), bracer spellpower |
-| 11 | Black Temple | Spellsurge, Battlemaster, glove major spellpower, Steelweave |
-| 12 | ZA / Sunwell | Executioner, Deathfrost |
+| IP tier | Milestone | Enchant access |
+|--------:|-----------|----------------|
+| 8 | Kara / Gruul / Mag open | Default TBC band (Potency, Battlemaster, Spellsurge, Major Spellpower, bracer/glove spellpower, trainer/vendor, etc.) |
+| 9 | Malchezaar (Kara clear) | + Sunfire, Soulfrost, Mongoose |
+| 12 | Sunwell band (Illidan / MT / ZA / event) | + Steelweave, Executioner, Deathfrost |
 
-## Override list (spell IDs to gate)
+## Override list (`kTbcEnchantTierOverrides`)
 
-These are the enchants worth caring about for progression — **~20 spells**, not hundreds.
-
-### Weapons (where wrong picks hurt most)
-
-| Spell ID | Enchant | Min tier | Typical formula source |
+| Spell ID | Enchant | Min tier | Formula source (AC DB) |
 |---------:|---------|--------:|------------------------|
-| 27967 | Major Striking | 9 | Heroic / Kara (Major Striking) |
-| 27984 | Mongoose | 9 | Kara — Moroes |
-| 27981 | Sunfire | 10 | Hyjal / BT trash |
-| 27982 | Soulfrost | 10 | Hyjal / BT trash |
-| 27972 | Potency | 10 | BT (Strength +20) |
-| 27975 | Major Spellpower | 10 | TK / SSC |
-| 28003 | Spellsurge | 11 | BT — Mother Shahraz |
-| 28004 | Battlemaster | 11 | BT |
-| 42974 | Executioner | 12 | Zul’Aman |
-| 46578 | Deathfrost | 12 | Sunwell / late TBC event |
+| 27981 | Sunfire | 9 | Karazhan — Shade of Aran |
+| 27982 | Soulfrost | 9 | Karazhan — Terestian Illhoof |
+| 27984 | Mongoose | 9 | Karazhan — Moroes |
+| 47051 | Cloak — Steelweave | 12 | Magisters' Terrace — Priestess Delrissa |
+| 42974 | Executioner | 12 | Zul'Aman bosses |
+| 46578 | Deathfrost | 12 | Midsummer Ice Chest (world event) |
 
-### Bracers / gloves / boots / cloak (secondary)
+## Explicitly not gated (tier 8 default)
 
-| Spell ID | Enchant | Min tier | Notes |
-|---------:|---------|--------:|-------|
-| 27917 | Bracer — Spellpower | 10 | Rare formula (ilvl 72) |
-| 33997 | Gloves — Major Spellpower | 11 | BT formula |
-| 34007 | Boots — Cat’s Swiftness | 9 | Kara-era BoE formula |
-| 34008 | Boots — Boar’s Speed | 9 | Kara-era BoE formula |
-| 34005 | Cloak — Greater Arcane Resistance | 9 | Kara rep / early |
-| 34006 | Cloak — Greater Shadow Resistance | 9 | Kara rep / early |
-| 47051 | Cloak — Steelweave | 11 | BT-era |
+Examples verified against `creature_loot_template` / `npc_vendor`:
 
-### Ring enchants (only if bots ever enchant rings)
+| Spell ID | Enchant | Typical source |
+|---------:|---------|------------------|
+| 27972 | Potency | Sethekk / Old Hillsbrad / SSC trash (ref 24092) |
+| 28004 | Battlemaster | Same ref 24092 |
+| 28003 | Spellsurge | Same ref 24092 |
+| 27975 | Major Spellpower | Bash'ir Landing (Outland) |
+| 27917 | Bracer — Spellpower | Bloodmaul Geomancer (Blade's Edge) |
+| 33997 | Gloves — Major Spellpower | Alurmi (Keepers of Time QM) |
+| 27967 | Major Striking | Heroic / early TBC |
+| 34007 | Boots — Cat's Swiftness | Early TBC BoE |
+| 34008 | Boots — Boar's Speed | Early TBC BoE |
 
-| Spell ID | Enchant | Min tier | Notes |
-|---------:|---------|--------:|-------|
-| 27924 | Ring — Spellpower | 10 | Enchanter-only slot; may not apply today |
-| 27926 | Ring — Healing | 10 | Same |
-| 27927 | Ring — Stats | 10 | Same |
+Also ungated: trainer/vendor TBC enchants, classic enchants (Crusader, etc.), scroll equivalents.
 
-## Explicitly **not** gated (stay tier 9 default)
+Shoulder enchants from Naxx40 Sapphiron are removed from `enchantSpellIdCache` at startup.
 
-- **Trainer / vendor TBC enchants**: Exceptional Stats (27960), Major Intellect (27968), Fortitude, Dexterity, etc.
-- **Classic enchants** (spell < 27899): Crusader, +15 Agi/Str (23800/23799), MC/ZG glove enchants (25072 Threat, etc.) — already allowed whenever classic+TBC phase allows TBC content… at tier 9 TBC phase applies so classic spells still allowed.
-- **Scroll-only greens** — same spell ID as craft; if the spell is allowed, scroll and formula are equivalent for bots.
-- **Shoulder enchants** — Naxx 40 Sapphiron spells already removed from `enchantSpellIdCache`.
-
-## Scale check
-
-| Category | Approx. count |
-|----------|---------------|
-| All spells in `enchantSpellIdCache` | ~thousands |
-| TBC band spells (27899–44482) | ~hundreds |
-| **Proposed tier overrides** | **~20** |
-| Formulas with quality Rare+ in TBC band (DB) | ~40 (many duplicates / classic IDs) |
-
-Your assumption is right: **only a handful** need explicit gates. The rest are either (a) already blocked by expansion floor, (b) never win stat scoring, or (c) correctly available from Kara onward.
+Ring enchants (27924/27926/27927) have no tier override; ring slot enchants may not apply today.
 
 ## Implementation
 
-Live in `ProgressionGearLimits.cpp`: `kTbcEnchantTierOverrides` + `GetRequiredIpTierForTbcEnchantSpell()`.
+Live in `ProgressionGearLimits.cpp`: `kTbcEnchantTierOverrides` + `GetRequiredIpTierForTbcEnchantSpell()` (default `IP_TIER_TBC_UNLOCK`).
 
 ## Resolved decisions
 
-1. Classic raid enchants at tier 9 — allowed (no override).
-2. Potency / Major Spellpower — tier 10.
-3. Ring enchants — skipped for v1.
-4. Deathfrost — tier 12.
+1. Default TBC enchant floor — tier 8 (Kara open), not tier 9.
+2. Kara-clear weapon enchants — Sunfire, Soulfrost, Mongoose at tier 9 only.
+3. Late TBC — Steelweave (MT), Executioner (ZA), Deathfrost (event) at tier 12.
+4. Potency / Battlemaster / Spellsurge / Major Spellpower / bracer & glove spellpower — tier 8 (no override).
+5. Ring enchants — no override; scoring/slot limits unchanged.

@@ -14,6 +14,20 @@ See also: [Playerbots Wiki — commands](https://github.com/mod-playerbots/mod-p
 
 ---
 
+## Party & group
+
+| Command | What it does |
+|---------|----------------|
+| `.group disband [playername]` | GM: force-disband the target player's group (self if omitted) |
+| `.group remove [playername]` | GM: remove target from their group |
+| `/p leave` | Tell all party bots to leave/disband the group |
+| `leave` (whisper) | One bot leaves the group |
+| `.playerbot bot remove <name>` | Log a bot out entirely (`logout` / `rm` aliases) |
+
+As party leader you can also right-click your portrait → **Leave Party** to disband normally.
+
+---
+
 ## Gear — equip upgrades from bags
 
 Scan inventory and equip anything that beats what is worn (same logic as auto-loot upgrades).
@@ -60,6 +74,48 @@ botAI->DoSpecificAction("equip upgrades packet action");
 | `autogear bis 55` | BiS at explicit ilvl (must be ≤ `AutoGearScoreLimit`) |
 
 Requires `AiPlayerbot.AutoGearCommand = 1`. BiS requires `AutoGearBisCommand = 1` and `AutoGearQualityLimit = 4`.
+
+---
+
+## Maintenance — supplies, attunements, enchants
+
+Full upkeep without replacing gear (unlike `autogear`). Respects IP tier when
+`MaintenanceFollowProgression = 1`.
+
+| Command | What it does |
+|---------|----------------|
+| `maintenance` | Everything enabled by `AltMaintenance*` config flags (consumables, attunements, enchants, talents, glyphs, etc.) |
+| `attune` | Attunement quests only (IP-gated) + repair |
+| `enchant` | Enchants and gems on current gear (IP-gated) + repair |
+| `maintenance attune` | Same as `attune` |
+| `maintenance enchant` | Same as `enchant` |
+
+Requires `AiPlayerbot.MaintenanceCommand = 1`.
+
+**Typical alt workflow (e.g. hand-tuned talents/glyphs):**
+
+1. Turn off `AltMaintenanceTalentTree` and `AltMaintenanceGlyphs` in config
+2. `/p attune` when a new raid tier opens attunements
+3. `/p enchant` after gear changes
+4. Use full `maintenance` only when you want consumables/refill as well
+
+**Chained commands** (`CommandSeparator = \\`):
+
+```
+attune\enchant
+```
+
+Runs attune then enchant as two separate steps (not `maintenance\attune`, which
+would run full maintenance first).
+
+**Related config** (`playerbots.conf`):
+
+| Setting | Meaning |
+|---------|---------|
+| `AltMaintenanceAttunementQuests` | Include attunements in full `maintenance` |
+| `AltMaintenanceGemsEnchants` | Include enchants/gems in full `maintenance` |
+| `AltMaintenanceTalentTree` / `AltMaintenanceGlyphs` | Reset talents/glyphs on full `maintenance` |
+| `MaintenanceFollowProgression` | Cap supplies/enchants/gems to master's IP tier |
 
 ---
 
@@ -145,6 +201,9 @@ Tier 8 → S1 (Kara open), tier 9 → S2 (Malchezaar), … tier 16+ → S8 (ICC 
 ### Core — end season early and distribute rewards (GM security 3)
 
 IP commands do **not** pay out titles/gear. Use core **`.arena season`** for that.
+
+Manual Gladiator + mount per character (bypass ladder rules): see
+[arena-season-manual-rewards.md](arena-season-manual-rewards.md).
 
 | Command | What it does |
 |---------|----------------|
