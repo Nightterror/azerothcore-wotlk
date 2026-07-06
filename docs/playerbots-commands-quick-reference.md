@@ -167,6 +167,26 @@ Items must be in the bot's bags when using `equip` or `replace`.
 
 ---
 
+## GM — copy equipped gear from a target
+
+Clone everything a bot (or any player) is wearing into **your** bags — useful when
+you want to mirror a bot's gear set on an alt or inspect exact item IDs/enchants.
+
+| Command | What it does |
+|---------|----------------|
+| `.gear copy` | Target a player, then run: copies all equipped items (slots 0–18) into your bags |
+
+**Usage:**
+
+1. `/target Botname`
+2. `.gear copy`
+
+Copies item ID, enchants, gems, and random properties. Items are unbound. Requires
+the same RBAC permission as `.additem`. Skips slots with no item; reports count of
+copied vs skipped (e.g. bag full).
+
+---
+
 ## Arena season (Individual Progression + core)
 
 Server-wide rated arena season and vendor gear track IP tier milestones (boss clears).
